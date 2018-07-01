@@ -1,0 +1,24 @@
+* Attacking mesh
+* Make check check
+* Castling ability
+* ? Select piece - show possible moves ?
+
+-- strip away false squares in meshes ?
+!! inverse logic only for pawns !!
+
+
+attacking mesh rules:
+	0 = can not move to this square
+	1 = Can not move to this square, but square is protected
+	2 = Can move to this avaliable square
+	3 = Can move to this square and capture piece
+	4 = Can capture on this square, but not move to it (En Passant)
+
+MOVE/GAME SEQUENCE
+* map possibilites for all pieces
+* 
+
+++
+-+
++-
+--
