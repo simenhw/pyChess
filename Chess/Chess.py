@@ -5,7 +5,6 @@ class Piece:
         self.value = value
         self.color = color
 
-
 class King(Piece):
 
     def __init__(self, color):
@@ -56,13 +55,20 @@ def parseSquareName(col, row):
     squareChar = chr(96+col)
     return squareChar+str(row)
 
+def nullMap():
+    map = {}
+    for col in range(1,9):
+        for row in range(1,9):
+            squareName = parseSquareName(col,row)
+            map[squareName] = 0
+    return map
+
 class Game:
 
     def __init__(self):
         self.whitesTurn = True
         self.board = {}
         self.moves = []
-        self.possibleEnPassant = ''
         for col in range(1,9):
             for row in range(1,9):
                 squareName = parseSquareName(col,row)
@@ -107,7 +113,7 @@ class Game:
         for row in range(8,0,-1):
             for col in range(1,9):
                 if self.board[parseSquareName(col,row)] == 0:
-                    print(0, end='              ')
+                    print(parseSquareName(col,row) + ':' + '0', end='              ')
                 else:
                     pieceName = self.board[parseSquareName(col,row)].color + ' ' + self.board[parseSquareName(col,row)].name
                     length = len(pieceName)
@@ -115,219 +121,46 @@ class Game:
                     spaceStr = ''
                     for x in range(0,spacesToAdd):
                         spaceStr += ' '
-                    print(pieceName, end=spaceStr)
+                    print(parseSquareName(col,row) + ':' + pieceName, end=spaceStr)
             print('\n')
 
-    def move(self, begin, to):
-        fromTuple = unParseSquareName(begin)
-        toTuple = unParseSquareName(to)
-        #Check that moving from square is within board
-        if not (1 <= fromTuple[0] <= 8 and 1 <= fromTuple[1] <= 8):
-            return "From square does not exist"
-        #Check that moving to square is within board
-        if not (1 <= toTuple[0] <= 8 and 1 <= toTuple[1] <= 8):
-            return "To square does not exist"
-        #Copy possible piece object to var
-        movePiece = self.board[begin]
-        #Check if move piece does not exist
-        if movePiece == 0:
-            return "No piece in that square"
-        #Check that the move is not from and to the same square
-        if begin == to:
-            return "Can not move to and from same square"
-        #Check if square to move to is occupied by piece of same color
-        if self.board[to] != 0:
-            if self.board[to].color == movePiece.color:
-                return "Square occupied by piece of same color"
-        #Create inverter for row calculations
-        inverter = 1
-        if not(self.whitesTurn):
-            inverter = -1
-        #if moving wrong colored piece
-        if ((movePiece.color == 'white' and not(self.whitesTurn)) or (movePiece.color == 'black' and self.whitesTurn)):
-            return "Wrong color of piece to move"
-
-        #Create steps variables
-        stepsHorisontal = toTuple[0] - fromTuple[0]
-        stepsVertical = toTuple[1] - fromTuple[1]
-        #create negative/positive multiplicators
-        if stepsHorisontal < 0:
-            horisontalNegative = -1
-        else:
-            horisontalNegative = 1
-        if stepsVertical < 0:
-            verticalNegative = -1
-        else:
-            verticalNegative = 1
- 
-        #King move logic
-        if movePiece.name == 'king':
-            something = 1
-
-        #Queen move logic
-        elif movePiece.name == 'queen':
-            #Check if move is neither linear or axial
-            if not(abs(stepsHorisontal) == abs(stepsVertical) or fromTuple[0] == toTuple[0] or fromTuple[1] == toTuple[1]):
-                return "illegal queen move"
-
-            if fromTuple[0] == toTuple[0] or fromTuple[1] == toTuple[1]:
-                #Check if pieces in the way linear move
-                for steps in range(1, stepsHorisontal + 1):
-                    squareToCheck = parseSquareName(fromTuple[0] + steps*horisontalNegative,fromTuple[1])
-                    #if same colored piece in the way
-                    if self.board[squareToCheck] != 0:
-                        if self.board[squareToCheck].color == movePiece.color:
-                            return "Same colored piece in the way for queen" 
-                        elif squareToCheck != to:
-                            return "Enemy piece in the way for queen"
-                for steps in range(1, stepsVertical + 1):
-                    squareToCheck = parseSquareName(fromTuple[0], fromTuple[1] + steps*verticalNegative)
-                    #if same colored piece in the way
-                    if self.board[squareToCheck] != 0:
-                        if self.board[squareToCheck].color == movePiece.color:
-                            return "Same colored piece in the way for queen"
-                        elif squareToCheck != to:
-                            return "Enemy piece in the way for queen"
-            if abs(stepsHorisontal) == abs(stepsVertical):
-                #Check if pieces in the way axial move
-                queenSteps = abs(fromTuple[0] - toTuple[0])
-                for steps in range(1,queenSteps+1):
-                    squareToCheck = parseSquareName(fromTuple[0] + steps*horisontalNegative,fromTuple[1] + steps*verticalNegative)
-                    if self.board[squareToCheck] != 0:
-                        if self.board[squareToCheck].color == movePiece.color:
-                            return "Same colored piece in the way for queen"
-                        elif squareToCheck != to:
-                            return "Enemy piece in the way for queen"
-            #if square to move to is free
-            if self.board[to] == 0:
-                return self.executeMove(movePiece, begin, to, False)
-            else:
-                return self.executeMove(movePiece, begin, to, to)
-
-        #Rook move logic
-        elif movePiece.name == 'rook':
-            #Check if move in more than one axis
-            if not(fromTuple[0] == toTuple[0] or fromTuple[1] == toTuple[1]):
-                return "Not linear move for Rook"
-            #Check if pieces in the way
-            for steps in range(1, stepsHorisontal + 1):
-                squareToCheck = parseSquareName(fromTuple[0] + steps*horisontalNegative,fromTuple[1])
-                #if same colored piece in the way
-                if self.board[squareToCheck] != 0:
-                    if self.board[squareToCheck].color == movePiece.color:
-                        return "Same colored piece in the way for rook" 
-                    elif squareToCheck != to:
-                        return "Enemy piece in the way for rook"
-            for steps in range(1, stepsVertical + 1):
-                squareToCheck = parseSquareName(fromTuple[0], fromTuple[1] + steps*verticalNegative)
-                #if same colored piece in the way
-                if self.board[squareToCheck] != 0:
-                    if self.board[squareToCheck].color == movePiece.color:
-                        return "Same colored piece in the way for rook"
-                    elif squareToCheck != to:
-                        return "Enemy piece in the way for rook"
-            #if square to move to is free
-            if self.board[to] == 0:
-                return self.executeMove(movePiece, begin, to, False)
-            else:
-                return self.executeMove(movePiece, begin, to, to)
-
-        #Bishop move logic
-        elif movePiece.name == 'bishop':
-            #vertical and horisontal steps has to be equal
-            if abs(stepsHorisontal) != abs(stepsVertical):
-                return "Not a valid bishop move (horisontal steps does not match vertical)"
-
-            bishopSteps = abs(fromTuple[0] - toTuple[0])
-            for steps in range(1,bishopSteps+1):
-                squareToCheck = parseSquareName(fromTuple[0] + steps*horisontalNegative,fromTuple[1] + steps*verticalNegative)
-                if self.board[squareToCheck] != 0:
-                    if self.board[squareToCheck].color == movePiece.color:
-                        return "Same colored piece in the way for bishop"
-                    elif squareToCheck != to:
-                        return "Enemy piece in the way for bishop"
-            if self.board[to] == 0:
-                return self.executeMove(movePiece, begin, to, False)
-            else:
-                return self.executeMove(movePiece, begin, to, to)
-
-        #Knight move logic
-        elif movePiece.name == 'knight':
-            #can either move 1 horisontal and 2 vertical or 2 horisontal and 1 vertical
-            if ( abs(fromTuple[0] - toTuple[0]) == 1 and abs(fromTuple[1] - toTuple[1]) == 2) or ( abs(fromTuple[0] - toTuple[0]) == 2 and abs(fromTuple[1] - toTuple[1]) == 1):
-                if self.board[to] == 0:
-                    return self.executeMove(movePiece, begin, to, False)
-                else:
-                    return self.executeMove(movePiece, begin, to, to)
-            else:
-                return "Not a valid Knight move"
- 
-        #Pawn move logic
-        elif movePiece.name == 'pawn':
-            #linear moves
-            if fromTuple[0] == toTuple[0]:
-                #can not capture at linear moves, so to square has to be avaliable
-                if not(self.board[to] == 0):
-                    return "can not move pawn linear to occupied square"
-
-                pawnSteps = (toTuple[1] - fromTuple[1])*inverter
-                #if from start row move one or two squares possible
-                if pawnSteps == 2:
-                    if (movePiece.color == 'white' and fromTuple[1] == 2) or (movePiece.color == 'black' and fromTuple[1] == 7):
-                        #mark possible En Passant Square
-                        self.possibleEnPassant = to
-                        return self.executeMove(movePiece, begin, to, False)
-                    else:
-                        return "Double pawn step only possible from start row"
-                elif pawnSteps == 1:
-                    return self.executeMove(movePiece, begin, to, False)
-                else:
-                    return "Invalid linear pawn move"
-            #axial pawn move, has to capture, either En Passant or regular axial move
-            elif (fromTuple[0] == toTuple[0]-1 or fromTuple[0] == toTuple[0]+1) and fromTuple[1]+inverter == toTuple[1]:
-                #Regualar axial move?
-                if self.board[to] != 0:
-                    return self.executeMove(movePiece, begin, to, to)
-                #En passant possible?
-                elif self.possibleEnPassant != '':
-                    enPassantTuple = unParseSquareName(self.possibleEnPassant)
-                    if toTuple[0] == enPassantTuple[0] and toTuple[1] - enPassantTuple[1] == inverter:
-                        return self.executeMove(movePiece, begin, to, self.possibleEnPassant)
-                else:
-                    return "axial pawn move not regular or En Passant"
-            else:
-                return "Pawn move, neither legal linear or axial"
-
-    def mapPawn(self, square):
-        resultMap = {}
+    def mapPawn(self, square, withCheck):
+        resultMap = nullMap()
         piece = self.board[square]
         tuple = unParseSquareName(square)
+        inverter = 1
+        if self.board[square].color == 'black':
+            inverter = -1
         #if from start pos. Can move two steps ahead if square is not occupied
-        if tuple[1] == 2:
-            if self.board[parseSquareName(tuple[0], tuple[1]+2)] == 0:
-                resultMap[parseSquareName(tuple[0], tuple[1]+2)] = 2
+        if (inverter == 1 and tuple[1] == 2) or (inverter == -1 and tuple[1] == 7):
+            if self.board[parseSquareName(tuple[0], tuple[1]+2 * inverter)] == 0:
+                resultMap[parseSquareName(tuple[0], tuple[1]+2 * inverter)] = 2
         #can alway move one step ahead if square is not occupied
-        if self.board[parseSquareName(tuple[0], tuple[1]+1)] == 0:
-            resultMap[parseSquareName(tuple[0], tuple[1]+1)] = 2
+        if self.board[parseSquareName(tuple[0], tuple[1]+1 * inverter)] == 0:
+            resultMap[parseSquareName(tuple[0], tuple[1]+1 * inverter)] = 2
         #Protects or can attack sideways if square is occupied by enemy
         for j in range(1,3):
             add = j
             if add == 2:
                 add = -1
-            if 1 <= tuple[0]+add <= 8 and 1 <= tuple[1]+1 <= 8:
+            if 1 <= tuple[0]+add <= 8 and 1 <= tuple[1]+inverter <= 8:
                 #if there is a piece sideways
-                if self.board[parseSquareName(tuple[0]+add,tuple[1]+1)] != 0:
+                if self.board[parseSquareName(tuple[0]+add,tuple[1]+inverter)] != 0:
                     # if the piece is different colored
-                    if self.board[parseSquareName(tuple[0]+add,tuple[1]+1)].color != piece.color:
-                        #Can capture the piece
-                        resultMap[parseSquareName(tuple[0]+add,tuple[1]+1)] = 3
+                    if self.board[parseSquareName(tuple[0]+add,tuple[1]+inverter)].color != piece.color:
+                        #if piece is a king
+                        if self.board[parseSquareName(tuple[0]+add,tuple[1]+inverter)].name == 'king':
+                            resultMap[parseSquareName(tuple[0]+add,tuple[1]+inverter)] = 5
+                        else:
+                            #Can capture the piece
+                            resultMap[parseSquareName(tuple[0]+add,tuple[1]+inverter)] = 3
                      # if there is not an enemy piece, piece is same color 
                     else:
-                        resultMap[parseSquareName(tuple[0]+add,tuple[1]+1)] = 1
+                        resultMap[parseSquareName(tuple[0]+add,tuple[1]+inverter)] = 1
                 else:
-                    resultMap[parseSquareName(tuple[0]+add,tuple[1]+1)] = 1
+                    resultMap[parseSquareName(tuple[0]+add,tuple[1]+inverter)] = 1
 
-        #If there is an odd-colored pawn to the side that moved two steps in last move, En passant is possible
+		#If there is an odd-colored pawn to the side that moved two steps in last move, En passant is possible
         if len(self.moves) > 1:
             for j in range(1,3):
                 add = j
@@ -341,14 +174,19 @@ class Game:
                             lastMove = self.moves[-1]
                             #if the last move was to this square
                             if lastMove[1] == parseSquareName(tuple[0] + add, tuple[1]):
-                                steps = unParseSquareName(lastMove[0])[1] - unParseSquareName(lastMove[1])[1]
+                                steps = abs(unParseSquareName(lastMove[0])[1] - unParseSquareName(lastMove[1])[1])
                                 if steps == 2:
-                                    resultMap[parseSquareName(tuple[0] + add, tuple[1]+1)] = 2
+                                    resultMap[parseSquareName(tuple[0] + add, tuple[1]+inverter)] = 2
                                     resultMap[parseSquareName(tuple[0] + add, tuple[1])] = 4
+        if withCheck:
+            for testSquare in resultMap:
+                if 2 <= resultMap[testSquare] <= 3:
+                    if self.checkForCheck(square, testSquare):
+                        resultMap[testSquare] = 0
         return resultMap
 
-    def mapKnight(self, square):
-        resultMap = {}
+    def mapKnight(self, square, withCheck):
+        resultMap = nullMap()
         piece = self.board[square]
         tuple = unParseSquareName(square)
         #can either move 1 horisontal and 2 vertical or 2 horisontal and 1 vertical
@@ -378,16 +216,19 @@ class Game:
                     #if same colored piece in square
                     elif self.board[squareToCheck].color == piece.color:
                         resultMap[squareToCheck] = 1
+                    #if king in sqauare (odd colored)
+                    elif  self.board[squareToCheck].name == 'king':
+                        resultMap[squareToCheck] = 5
                     #else there has to be odd colored piece (can capture)
                     else:
                         resultMap[squareToCheck] = 3
         return resultMap
 
-    def mapBishop(self, square):
+    def mapBishop(self, square, withCheck):
         return self.axialMapping(square)
 
     def axialMapping(self, square):
-        resultMap = {}
+        resultMap = nullMap()
         piece = self.board[square]
         tuple = unParseSquareName(square)
         #check 4 axis
@@ -427,16 +268,21 @@ class Game:
                 elif self.board[squareToCheck].color == piece.color:
                     resultMap[squareToCheck] = 1
                     break
-                elif self.board[squareToCheck].color != piece.color:
+                #if king (has to be odd colored)
+                elif self.board[squareToCheck].name == 'king':
+                    resultMap[squareToCheck] = 5
+                    break
+                #has to be odd colored piece (not king)
+                else:
                     resultMap[squareToCheck] = 3
                     break
         return resultMap
 
-    def mapRook(self, square):
+    def mapRook(self, square, withCheck):
         return self.linearMapping(square)
 
     def linearMapping(self, square):
-        resultMap = {}
+        resultMap = nullMap()
         piece = self.board[square]
         tuple = unParseSquareName(square)
         #search i 4 axis
@@ -472,61 +318,157 @@ class Game:
                 elif self.board[squareToCheck].color == piece.color:
                     resultMap[squareToCheck] = 1
                     break
-                elif self.board[squareToCheck].color != piece.color:
+                #if king (has to be odd colored)
+                elif self.board[squareToCheck].name == 'king':
+                    resultMap[squareToCheck] = 5
+                    break
+                #has to be odd colored piece that can be captured
+                else:
                     resultMap[squareToCheck] = 3
                     break
         return resultMap
 
-    def mapQueen(self, square):
-        combinedList = { **self.linearMapping(square), **self.axialMapping(square) }
+    def mapQueen(self, square, withCheck):
+        combinedList = {}
+        for col in range(1,9):
+            for row in range(1,9):
+                checkSquare = parseSquareName(col, row)
+                if self.linearMapping(square)[checkSquare] != 0:
+                    combinedList[checkSquare] = self.linearMapping(square)[checkSquare] 
+                elif self.axialMapping(square)[checkSquare] != 0:
+                    combinedList[checkSquare] = self.axialMapping(square)[checkSquare] 
+                else:
+                    combinedList[checkSquare] = 0
         return combinedList
 
-    def executeMove(self, piece, begin, to, captureSquare):
-        #reset possible En Passant (if not this is the move where possible En Passant was created)
-        if self.possibleEnPassant !='':
-            if not(piece == self.board[begin] and to == self.possibleEnPassant):
-                self.possibleEnPassant = ''
+    def mapKing(self, square, withCheck):
+        something = 1
 
-        if captureSquare:
-            capturedPiece = self.board[captureSquare]
-            self.board[captureSquare] = 0
-        self.board[to] = self.board[begin]
-        self.board[begin] = 0
+    def checkMove(self, fromSquare, withCheck):
+        if self.board[fromSquare].name == 'pawn':
+            pieceMap = self.mapPawn(fromSquare, withCheck)
+        if self.board[fromSquare].name == 'knight':
+            pieceMap = self.mapKnight(fromSquare, withCheck)
+        if self.board[fromSquare].name == 'bishop':
+            pieceMap = self.mapBishop(fromSquare, withCheck)
+        if self.board[fromSquare].name == 'rook':
+            pieceMap = self.mapRook(fromSquare, withCheck)
+        if self.board[fromSquare].name == 'queen':
+            pieceMap = self.mapQueen(fromSquare, withCheck)
+        if self.board[fromSquare].name == 'king':
+            pieceMap = self.mapKing(fromSquare, withCheck)
+
+        return pieceMap
+
+    def checkForCheck(self, fromSquare, toSquare):
+        testGame = Game()
+        testGame.board = self.board.copy()
+        inCheck = False
+        testGame.executeMove(fromSquare, toSquare)
+        for square in testGame.board:
+            if testGame.board[square] != 0:
+                if testGame.board[square].color != self.board[fromSquare].color:
+                    #opposite color inner results..
+                    innerRes = testGame.checkMove(square, False)
+                    if innerRes:
+                        for innerSquare in innerRes:
+                            if innerRes[innerSquare] == 5:
+                                inCheck = True
+        return inCheck
+
+    def executeMove(self, fromSquare, toSquare):
+        capture = False
+        checkRes = self.checkMove(fromSquare, False)
+        piece = self.board[fromSquare]
+        capturedPiece = 0
+        #If move to empty square. Can be regular move or En Passant
+        if checkRes[toSquare] == 2:
+            #Check if the move is En Passant (if pawn move sideways(we know target square is empty))
+            if piece.name == 'pawn' and unParseSquareName(fromSquare)[0] != unParseSquareName(toSquare)[0]:
+                for result in checkRes:
+                    if checkRes[result] == 4:
+                        capturedPawnSquare = result
+                capturedPiece = board[capturedPawnSquare]
+                self.board[capturedPawnSquare] = 0
+                self.board[toSquare] = board[fromSquare]
+                self.board[fromSquare] = 0
+                capture = True
+            #if not En Passant, its a regular move
+            else:
+                self.board[toSquare] = self.board[fromSquare]
+                self.board[fromSquare] = 0
+
+        #if move is legal with capture
+        elif checkRes[toSquare] == 3:
+            capturedPiece = self.board[toSquare]
+            self.board[toSquare] = self.board[fromSquare]
+            self.board[fromSquare] = 0
+
+    def move(self, fromSquare, toSquare):
+        #If there is not a piece in fromSquare
+        if self.board[fromSquare] == 0:
+            return 'No piece in that square to move'
+        #If the squares are the same
+        if fromSquare == toSquare:
+            return "The piece has to be moved"
+
+        piece = self.board[fromSquare]
+        #Check if piece is wrong color
+        if (piece.color == 'white' and not(self.whitesTurn)) or (piece.color == 'black' and self.whitesTurn):
+            return "Wrong colored piece to move"
+
+        checkRes = self.checkMove(fromSquare, True)
+        #If move is not legal
+        if not( 2 <= checkRes[toSquare] <= 3):
+            return 'move is not legal'
+
+        #execute move
+        capture = False
+        #If move to empty square. Can be regular move or En Passant
+        if checkRes[toSquare] == 2:
+            #Check if the move is En Passant (if pawn move sideways(we know target square is empty))
+            if piece.name == 'pawn' and unParseSquareName(fromSquare)[0] != unParseSquareName(toSquare)[0]:
+                for result in checkRes:
+                    if checkRes[result] == 4:
+                        capturedPawnSquare = result
+                capturedPiece = self.board[capturedPawnSquare]
+                self.board[capturedPawnSquare] = 0
+                self.board[toSquare] = self.board[fromSquare]
+                self.board[fromSquare] = 0
+                capture = True
+            #if not En Passant, its a regular move
+            else:
+                self.board[toSquare] = self.board[fromSquare]
+                self.board[fromSquare] = 0
+
+        #if move is legal with capture
+        elif checkRes[toSquare] == 3:
+            capturedPiece = self.board[toSquare]
+            self.board[toSquare] = self.board[fromSquare]
+            self.board[fromSquare] = 0
+            capture = True
 
         self.whitesTurn = not(self.whitesTurn)
-        self.moves.append((begin, to))
-        if captureSquare:
-            return piece.color + " " + piece.name + " moved from " + begin + " to " + to + " and captured a " + capturedPiece.color + " " + capturedPiece.name + '\n'
+        self.moves.append((fromSquare, toSquare))
+        if capture:
+            return piece.color + " " + piece.name + " moved from " + fromSquare + " to " + toSquare + " and captured a " + capturedPiece.color + " " + capturedPiece.name + '\n'
         else:
-            return piece.color + " " + piece.name + " moved from " + begin + " to " + to + '\n'
+            return piece.color + " " + piece.name + " moved from " + fromSquare + " to " + toSquare + '\n'
 
 game = Game()
 
-print(game.mapPawn('a2'))
-
 game.printBoard()
 
-print(game.move('d2','d4'))
-game.printBoard() 
-
-print(game.move('h7','h6'))
-game.printBoard()
-
-print(game.move('d4','d5'))
-game.printBoard()
-
-print(game.move('c7','c5'))
-game.printBoard()
-
-print(game.move('g1','f3'))
-game.printBoard()
-
-print(game.move('a7','a5'))
-game.printBoard()
-
-print(game.mapQueen('d1'))
-print(game.mapQueen('d8'))
 
 
-#print(game.moves)
 
+
+gameOn = True
+while gameOn:
+    fromSquare = input('Move from: ')
+    toSquare = input('Move to: ')
+    if fromSquare == 'exit' or toSquare == 'exit':
+        gameOn = False
+    else:
+        print(game.move(fromSquare,toSquare))
+        game.printBoard() 
