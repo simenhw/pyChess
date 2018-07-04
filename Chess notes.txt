@@ -1,12 +1,6 @@
+
 * Castling ability
-* King move rules
-* Check for check (and check mate)
-	Map the piece
-
-
-	for exetuing every legal move for piece in a copy of board
-		while map all odd colored pieces
-			Check if same colored king is attacked
+* Check for check mate
 
 
 attacking mesh rules:
@@ -16,36 +10,3 @@ attacking mesh rules:
 	3 = Can move to this square and capture piece
 	4 = Can capture on this square, but not move to it (En Passant)
 	5 = Check (attacking odd colored king)
-
-
-	    def executeMove(self, fromSquare, toSquare, board):
-        capture = False
-        checkRes = self.checkMove(fromSquare)
-        piece = board[fromSquare]
-        capturedPiece = 0
-        #If move to empty square. Can be regular move or En Passant
-        if checkRes[toSquare] == 2:
-            #Check if the move is En Passant (if pawn move sideways(we know target square is empty))
-            if piece.name == 'pawn' and unParseSquareName(fromSquare)[0] != unParseSquareName(toSquare)[0]:
-                for result in checkRes:
-                    if checkRes[result] == 4:
-                        capturedPawnSquare = result
-                capturedPiece = board[capturedPawnSquare]
-                board[capturedPawnSquare] = 0
-                board[toSquare] = board[fromSquare]
-                board[fromSquare] = 0
-                capture = True
-            #if not En Passant, its a regular move
-            else:
-                board[toSquare] = board[fromSquare]
-                board[fromSquare] = 0
-
-        #if move is legal with capture
-        elif checkRes[toSquare] == 3:
-            capturedPiece = board[toSquare]
-            board[toSquare] = board[fromSquare]
-            board[fromSquare] = 0
-            capture = True
-        resultList = [capture, capturedPiece]
-        return resultList
-

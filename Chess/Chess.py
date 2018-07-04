@@ -124,7 +124,7 @@ class Game:
                     print(parseSquareName(col,row) + ':' + pieceName, end=spaceStr)
             print('\n')
 
-    def mapPawn(self, square, withCheck):
+    def mapPawn(self, square):
         resultMap = nullMap()
         piece = self.board[square]
         tuple = unParseSquareName(square)
@@ -178,14 +178,9 @@ class Game:
                                 if steps == 2:
                                     resultMap[parseSquareName(tuple[0] + add, tuple[1]+inverter)] = 2
                                     resultMap[parseSquareName(tuple[0] + add, tuple[1])] = 4
-        if withCheck:
-            for testSquare in resultMap:
-                if 2 <= resultMap[testSquare] <= 3:
-                    if self.checkForCheck(square, testSquare):
-                        resultMap[testSquare] = 0
         return resultMap
 
-    def mapKnight(self, square, withCheck):
+    def mapKnight(self, square):
         resultMap = nullMap()
         piece = self.board[square]
         tuple = unParseSquareName(square)
@@ -224,7 +219,7 @@ class Game:
                         resultMap[squareToCheck] = 3
         return resultMap
 
-    def mapBishop(self, square, withCheck):
+    def mapBishop(self, square):
         return self.axialMapping(square)
 
     def axialMapping(self, square):
@@ -278,7 +273,7 @@ class Game:
                     break
         return resultMap
 
-    def mapRook(self, square, withCheck):
+    def mapRook(self, square):
         return self.linearMapping(square)
 
     def linearMapping(self, square):
@@ -328,7 +323,7 @@ class Game:
                     break
         return resultMap
 
-    def mapQueen(self, square, withCheck):
+    def mapQueen(self, square):
         combinedList = {}
         for col in range(1,9):
             for row in range(1,9):
@@ -341,23 +336,53 @@ class Game:
                     combinedList[checkSquare] = 0
         return combinedList
 
-    def mapKing(self, square, withCheck):
-        something = 1
+    def mapKing(self, square):
+        resultMap = nullMap()
+        piece = self.board[square]
+        tuple = unParseSquareName(square)
+        for hor in range(-1,2):
+            for vert in range(-1,2):
+                #every possible move around king square except for king square
+                if not(vert == 0 and hor == 0):
+                    #if within board
+                    if 1 <= tuple[0]+hor <= 8 and 1 <= tuple[1]+vert <= 8:
+                        checkSquare  = parseSquareName(tuple[0]+hor, tuple[1]+vert)
+                        #If there is a piece
+                        if self.board[checkSquare] != 0:
+                            #if odd colored it can attack (attempts that leads to self check will be filtered away)
+                            if self.board[checkSquare].color != piece.color:
+                                #if odd colored piece is a king, mark as check (actually ilegal move, but will be filtered away)
+                                if self.board[checkSquare].name == 'king':
+                                    resultMap[checkSquare] = 5
+                                #any other odd colored piece
+                                else:
+                                    resultMap[checkSquare] = 3
+                            #if piece of same color
+                            elif self.board[checkSquare].color == piece.color:
+                                resultMap[checkSquare] = 1
+                        #If square is avaliable
+                        else:
+                            resultMap[checkSquare] = 2
+        return resultMap
 
     def checkMove(self, fromSquare, withCheck):
         if self.board[fromSquare].name == 'pawn':
-            pieceMap = self.mapPawn(fromSquare, withCheck)
+            pieceMap = self.mapPawn(fromSquare,)
         if self.board[fromSquare].name == 'knight':
-            pieceMap = self.mapKnight(fromSquare, withCheck)
+            pieceMap = self.mapKnight(fromSquare)
         if self.board[fromSquare].name == 'bishop':
-            pieceMap = self.mapBishop(fromSquare, withCheck)
+            pieceMap = self.mapBishop(fromSquare)
         if self.board[fromSquare].name == 'rook':
-            pieceMap = self.mapRook(fromSquare, withCheck)
+            pieceMap = self.mapRook(fromSquare)
         if self.board[fromSquare].name == 'queen':
-            pieceMap = self.mapQueen(fromSquare, withCheck)
+            pieceMap = self.mapQueen(fromSquare)
         if self.board[fromSquare].name == 'king':
-            pieceMap = self.mapKing(fromSquare, withCheck)
-
+            pieceMap = self.mapKing(fromSquare)
+        if withCheck:
+            for testSquare in pieceMap:
+                if 2 <= pieceMap[testSquare] <= 3:
+                    if self.checkForCheck(fromSquare, testSquare):
+                        pieceMap[testSquare] = 0
         return pieceMap
 
     def checkForCheck(self, fromSquare, toSquare):
@@ -459,10 +484,6 @@ game = Game()
 
 game.printBoard()
 
-
-
-
-
 gameOn = True
 while gameOn:
     fromSquare = input('Move from: ')
@@ -471,4 +492,4 @@ while gameOn:
         gameOn = False
     else:
         print(game.move(fromSquare,toSquare))
-        game.printBoard() 
+        game.printBoard()  
