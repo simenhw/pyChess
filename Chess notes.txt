@@ -1,4 +1,4 @@
-Piece map rules:
+Piece map values:
 	1 = Can not move to this square, but square is protected
 	2 = Can move to this avaliable square
 	3 = Can move to this square and capture piece
