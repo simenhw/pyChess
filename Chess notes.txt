@@ -1,7 +1,4 @@
-
 * Castling ability
-* Check for check mate
-
 
 attacking mesh rules:
 	0 = can not move to this square

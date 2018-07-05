@@ -55,20 +55,13 @@ def parseSquareName(col, row):
     squareChar = chr(96+col)
     return squareChar+str(row)
 
-def nullMap():
-    map = {}
-    for col in range(1,9):
-        for row in range(1,9):
-            squareName = parseSquareName(col,row)
-            map[squareName] = 0
-    return map
-
 class Game:
 
     def __init__(self):
         self.whitesTurn = True
         self.board = {}
         self.moves = []
+        self.pieceMap = {}
         for col in range(1,9):
             for row in range(1,9):
                 squareName = parseSquareName(col,row)
@@ -125,7 +118,7 @@ class Game:
             print('\n')
 
     def mapPawn(self, square):
-        resultMap = nullMap()
+        resultMap = {}
         piece = self.board[square]
         tuple = unParseSquareName(square)
         inverter = 1
@@ -181,7 +174,7 @@ class Game:
         return resultMap
 
     def mapKnight(self, square):
-        resultMap = nullMap()
+        resultMap = {}
         piece = self.board[square]
         tuple = unParseSquareName(square)
         #can either move 1 horisontal and 2 vertical or 2 horisontal and 1 vertical
@@ -223,7 +216,7 @@ class Game:
         return self.axialMapping(square)
 
     def axialMapping(self, square):
-        resultMap = nullMap()
+        resultMap = {}
         piece = self.board[square]
         tuple = unParseSquareName(square)
         #check 4 axis
@@ -277,7 +270,7 @@ class Game:
         return self.linearMapping(square)
 
     def linearMapping(self, square):
-        resultMap = nullMap()
+        resultMap = {}
         piece = self.board[square]
         tuple = unParseSquareName(square)
         #search i 4 axis
@@ -324,20 +317,11 @@ class Game:
         return resultMap
 
     def mapQueen(self, square):
-        combinedList = {}
-        for col in range(1,9):
-            for row in range(1,9):
-                checkSquare = parseSquareName(col, row)
-                if self.linearMapping(square)[checkSquare] != 0:
-                    combinedList[checkSquare] = self.linearMapping(square)[checkSquare] 
-                elif self.axialMapping(square)[checkSquare] != 0:
-                    combinedList[checkSquare] = self.axialMapping(square)[checkSquare] 
-                else:
-                    combinedList[checkSquare] = 0
+        combinedList = {**self.linearMapping(square), **self.axialMapping(square)}
         return combinedList
 
     def mapKing(self, square):
-        resultMap = nullMap()
+        resultMap = {}
         piece = self.board[square]
         tuple = unParseSquareName(square)
         for hor in range(-1,2):
@@ -365,45 +349,73 @@ class Game:
                             resultMap[checkSquare] = 2
         return resultMap
 
-    def checkMove(self, fromSquare, withCheck):
-        if self.board[fromSquare].name == 'pawn':
-            pieceMap = self.mapPawn(fromSquare,)
-        if self.board[fromSquare].name == 'knight':
-            pieceMap = self.mapKnight(fromSquare)
-        if self.board[fromSquare].name == 'bishop':
-            pieceMap = self.mapBishop(fromSquare)
-        if self.board[fromSquare].name == 'rook':
-            pieceMap = self.mapRook(fromSquare)
-        if self.board[fromSquare].name == 'queen':
-            pieceMap = self.mapQueen(fromSquare)
-        if self.board[fromSquare].name == 'king':
-            pieceMap = self.mapKing(fromSquare)
-        if withCheck:
-            for testSquare in pieceMap:
-                if 2 <= pieceMap[testSquare] <= 3:
-                    if self.checkForCheck(fromSquare, testSquare):
-                        pieceMap[testSquare] = 0
-        return pieceMap
+    def generatePieceMap(self):
+        self.pieceMap = {}
+        for square in self.board:
+            if self.board[square] != 0:
+                if self.board[square].name == 'pawn':
+                    self.pieceMap[square] = self.mapPawn(square)
+                elif self.board[square].name == 'knight':
+                    self.pieceMap[square] = self.mapKnight(square)
+                elif self.board[square].name == 'bishop':
+                    self.pieceMap[square] = self.mapBishop(square)
+                elif self.board[square].name == 'rook':
+                    self.pieceMap[square] = self.mapRook(square)
+                elif self.board[square].name == 'queen':
+                    self.pieceMap[square] = self.mapQueen(square)
+                elif self.board[square].name == 'king':
+                    self.pieceMap[square] = self.mapKing(square)
 
-    def checkForCheck(self, fromSquare, toSquare):
+    def removeChecksFromMap(self):
         testGame = Game()
-        testGame.board = self.board.copy()
         inCheck = False
-        testGame.executeMove(fromSquare, toSquare)
-        for square in testGame.board:
-            if testGame.board[square] != 0:
-                if testGame.board[square].color != self.board[fromSquare].color:
-                    #opposite color inner results..
-                    innerRes = testGame.checkMove(square, False)
-                    if innerRes:
-                        for innerSquare in innerRes:
-                            if innerRes[innerSquare] == 5:
-                                inCheck = True
-        return inCheck
+        removeResult = []
+        lastMoveColor = self.board[self.moves[-1][1]].color
+        #for every piece with same color as last move
+        for square, map in self.pieceMap.items():
+            if self.board[square].color != lastMoveColor:
+                #For every currently legal move
+                for toSquare, result in map.items():
+                    if 2 <= result <= 3:
+                        testGame.board = self.board.copy()
+                        testGame.pieceMap = self.pieceMap.copy()
+                        #do the move in the testGame
+                        testGame.executeMove(square, toSquare)
+                        #Generate a new PieceMap
+                        testGame.generatePieceMap()
+                        #now, check if the other color has check
+                        for testSquare, testMap in testGame.pieceMap.items():
+                            if testGame.board[testSquare].color == lastMoveColor:
+                                for testToSquare, testResult in testMap.items():
+                                    if testResult == 5:
+                                        removeResult.append((square,toSquare))
+
+        for tuple in list(set(removeResult)):
+            del self.pieceMap[tuple[0]][tuple[1]]
+
+    def mapPieces(self):
+        self.generatePieceMap()
+        self.removeChecksFromMap()
+
+    def checkForMate(self, justMovedColor):
+        inCheck = False
+        for square, map in self.pieceMap.items():
+            if self.board[square].color != justMovedColor:
+                for toSquare, result in map.items():
+                    if 2 <= result <= 3:
+                        return False
+            else:
+                for toSquare, result in map.items():
+                    if result == 5:
+                        inCheck = True
+                        break
+        if inCheck:
+            return "Checkmate"
+        else:
+            return "Stalemate"
 
     def executeMove(self, fromSquare, toSquare):
-        capture = False
-        checkRes = self.checkMove(fromSquare, False)
+        checkRes = self.pieceMap[fromSquare]
         piece = self.board[fromSquare]
         capturedPiece = 0
         #If move to empty square. Can be regular move or En Passant
@@ -413,11 +425,10 @@ class Game:
                 for result in checkRes:
                     if checkRes[result] == 4:
                         capturedPawnSquare = result
-                capturedPiece = board[capturedPawnSquare]
+                capturedPiece = self.board[capturedPawnSquare]
                 self.board[capturedPawnSquare] = 0
-                self.board[toSquare] = board[fromSquare]
+                self.board[toSquare] = self.board[fromSquare]
                 self.board[fromSquare] = 0
-                capture = True
             #if not En Passant, its a regular move
             else:
                 self.board[toSquare] = self.board[fromSquare]
@@ -442,20 +453,27 @@ class Game:
         if (piece.color == 'white' and not(self.whitesTurn)) or (piece.color == 'black' and self.whitesTurn):
             return "Wrong colored piece to move"
 
-        checkRes = self.checkMove(fromSquare, True)
+        #Get the current piece map
+        currentPieceMap = self.pieceMap[fromSquare]
+        legal = False
+        #Check if toSquare exists in the current piece map
+        for square, result in currentPieceMap.items():
+            if square == toSquare and 2<= result <= 3:
+                legal = True
+                break
         #If move is not legal
-        if not( 2 <= checkRes[toSquare] <= 3):
+        if not(legal):
             return 'move is not legal'
 
         #execute move
         capture = False
         #If move to empty square. Can be regular move or En Passant
-        if checkRes[toSquare] == 2:
-            #Check if the move is En Passant (if pawn move sideways(we know target square is empty))
+        if currentPieceMap[toSquare] == 2:
+            #Check if the move is En Passant (if pawn move sideways(we know target square is empty)(and there can only be one En Passant)
             if piece.name == 'pawn' and unParseSquareName(fromSquare)[0] != unParseSquareName(toSquare)[0]:
-                for result in checkRes:
-                    if checkRes[result] == 4:
-                        capturedPawnSquare = result
+                for square, result in currentPieceMap.items():
+                    if result == 4:
+                        capturedPawnSquare = square
                 capturedPiece = self.board[capturedPawnSquare]
                 self.board[capturedPawnSquare] = 0
                 self.board[toSquare] = self.board[fromSquare]
@@ -467,7 +485,7 @@ class Game:
                 self.board[fromSquare] = 0
 
         #if move is legal with capture
-        elif checkRes[toSquare] == 3:
+        elif currentPieceMap[toSquare] == 3:
             capturedPiece = self.board[toSquare]
             self.board[toSquare] = self.board[fromSquare]
             self.board[fromSquare] = 0
@@ -475,6 +493,14 @@ class Game:
 
         self.whitesTurn = not(self.whitesTurn)
         self.moves.append((fromSquare, toSquare))
+        self.mapPieces()
+        #Check for checkmate or stalemate (if no legal moves for any odd colored pieces)
+        mateRes = self.checkForMate(piece.color)
+        if mateRes == 'Checkmate':
+            return piece.color + " won with checkmate"
+        elif mateRes == 'Stalemate':
+            return piece.color + " lost with stalemate"
+
         if capture:
             return piece.color + " " + piece.name + " moved from " + fromSquare + " to " + toSquare + " and captured a " + capturedPiece.color + " " + capturedPiece.name + '\n'
         else:
@@ -483,6 +509,7 @@ class Game:
 game = Game()
 
 game.printBoard()
+game.generatePieceMap()
 
 gameOn = True
 while gameOn:
@@ -492,4 +519,5 @@ while gameOn:
         gameOn = False
     else:
         print(game.move(fromSquare,toSquare))
-        game.printBoard()  
+        game.printBoard() 
+
