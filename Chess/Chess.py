@@ -366,7 +366,8 @@ class Game:
                 elif self.board[square].name == 'king':
                     self.pieceMap[square] = self.mapKing(square)
 
-    def removeChecksFromMap(self):
+    #Removes moves where it puts itself in check
+    def removeSelfChecksFromMap(self):
         testGame = Game()
         inCheck = False
         removeResult = []
@@ -393,9 +394,68 @@ class Game:
         for tuple in list(set(removeResult)):
             del self.pieceMap[tuple[0]][tuple[1]]
 
+    def addCastlingToMap(self):
+        if self.whitesTurn:
+            kingRow = '1'
+        else:
+            kingRow = '8'
+
+        kingSideCanCastle = True
+        queenSideCanCastle = True
+        kingHasMoved = False
+        aRookHasMoved = False
+        hRookHasMoved = False
+
+        for tuples in self.moves:
+            if tuples[0] == 'e' + kingRow:
+                kingHasMoved = True
+            if tuples[0] == 'a' + kingRow:
+                aRookHasMoved = True
+            if tuples[0] == 'h' + kingRow:
+                hRookHasMoved = True
+
+        #if king has moved
+        if kingHasMoved:
+            kingSideCanCastle = False
+            queenSideCanCastle = False
+        else:
+            #Check if kingside castling is possible
+            if hRookHasMoved:
+                kingSideCanCastle = False
+            #Check if f and g is free of pieces
+            elif self.board['f' + kingRow] != 0 or self.board['g' + kingRow] != 0:
+                kingSideCanCastle = False
+            else:
+                #check if e, f or g exists in piecemap for the opposite pieces
+                for fromSquare, toSquareMap in self.pieceMap.items():
+                    if self.board[fromSquare].color != self.board['e'+kingRow].color:
+                        for toSquare, result in toSquareMap.items():
+                            if toSquare == 'e' + kingRow or toSquare == 'f' + kingRow or toSquare == 'g' + kingRow:
+                                kingSideCanCastle = False
+                                break
+            #Check if queenside castling is possible
+            if aRookHasMoved:
+                queenSideCanCastle = False
+            #Check if b, c and d is free of pieces
+            elif self.board['b' + kingRow] != 0 or self.board['c' + kingRow] != 0 or self.board['d' + kingRow] != 0:
+                queenSideCanCastle = False
+            else:
+                #check if c, d or e exists in piecemap for the black pieces
+                for fromSquare, toSquareMap in self.pieceMap.items():
+                    if self.board[fromSquare].color != self.board['e'+kingRow].color:
+                        for toSquare, result in toSquareMap.items():
+                            if toSquare == 'c' + kingRow or toSquare == 'd' + kingRow or toSquare == 'e' + kingRow:
+                                queenSideCanCastle = False
+                                break
+        if kingSideCanCastle:
+            self.pieceMap['e' + kingRow]['g' + kingRow] = 2
+        if queenSideCanCastle:
+            self.pieceMap['e' + kingRow]['c' + kingRow] = 2
+             
     def mapPieces(self):
         self.generatePieceMap()
-        self.removeChecksFromMap()
+        self.removeSelfChecksFromMap()
+        self.addCastlingToMap()
 
     def checkForMate(self, justMovedColor):
         inCheck = False
@@ -467,7 +527,7 @@ class Game:
 
         #execute move
         capture = False
-        #If move to empty square. Can be regular move or En Passant
+        #If move to empty square. Can be regular move, castling or En Passant
         if currentPieceMap[toSquare] == 2:
             #Check if the move is En Passant (if pawn move sideways(we know target square is empty)(and there can only be one En Passant)
             if piece.name == 'pawn' and unParseSquareName(fromSquare)[0] != unParseSquareName(toSquare)[0]:
@@ -479,7 +539,21 @@ class Game:
                 self.board[toSquare] = self.board[fromSquare]
                 self.board[fromSquare] = 0
                 capture = True
-            #if not En Passant, its a regular move
+            #Check if the move is castling. If the king moves more than one column
+            elif piece.name == 'king' and abs(unParseSquareName(fromSquare)[0] - unParseSquareName(toSquare)[0]) > 1:
+                #if queenside castling
+                if toSquare[0] == 'c':
+                    self.board[toSquare] = self.board[fromSquare]
+                    self.board[fromSquare] = 0
+                    self.board['d' + fromSquare[1]] = self.board['a' + fromSquare[1]]
+                    self.board['a' + fromSquare[1]] = 0
+                #has to be kingside castling
+                else:
+                    self.board[toSquare] = self.board[fromSquare]
+                    self.board[fromSquare] = 0
+                    self.board['f' + fromSquare[1]] = self.board['h' + fromSquare[1]]
+                    self.board['h' + fromSquare[1]] = 0
+            #if not castling or En Passant, its a regular move
             else:
                 self.board[toSquare] = self.board[fromSquare]
                 self.board[fromSquare] = 0

@@ -1,7 +1,4 @@
-* Castling ability
-
-attacking mesh rules:
-	0 = can not move to this square
+Piece map rules:
 	1 = Can not move to this square, but square is protected
 	2 = Can move to this avaliable square
 	3 = Can move to this square and capture piece
