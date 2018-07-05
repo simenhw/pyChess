@@ -136,9 +136,9 @@ class Game:
         inverter = 1
         if self.board[square].color == 'black':
             inverter = -1
-        #if from start pos. Can move two steps ahead if square is not occupied
+        #if from start pos. Can move two steps ahead if squares are not occupied
         if (inverter == 1 and tuple[1] == 2) or (inverter == -1 and tuple[1] == 7):
-            if self.board[parseSquareName(tuple[0], tuple[1]+2 * inverter)] == 0:
+            if self.board[parseSquareName(tuple[0], tuple[1]+2 * inverter)] == 0 and self.board[parseSquareName(tuple[0], tuple[1]+1 * inverter)] == 0:
                 resultMap[parseSquareName(tuple[0], tuple[1]+2 * inverter)] = 2
         #can alway move one step ahead if square is on board and not occupied
         if 1 <= tuple[1]+1 * inverter <= 8:
@@ -175,15 +175,16 @@ class Game:
                 if 1 <= tuple[0] + add <= 8:
                     #if there is a piece
                     if self.board[parseSquareName(tuple[0] + add, tuple[1])] != 0:
-                        #if its odd colored
+                        #if its an odd colored pawn
                         if self.board[parseSquareName(tuple[0] + add, tuple[1])].color != self.board[square]:
-                            lastMove = self.moves[-1]
-                            #if the last move was to this square
-                            if lastMove[1] == parseSquareName(tuple[0] + add, tuple[1]):
-                                steps = abs(unParseSquareName(lastMove[0])[1] - unParseSquareName(lastMove[1])[1])
-                                if steps == 2:
-                                    resultMap[parseSquareName(tuple[0] + add, tuple[1]+inverter)] = 2
-                                    resultMap[parseSquareName(tuple[0] + add, tuple[1])] = 4
+                            if self.board[parseSquareName(tuple[0] + add, tuple[1])].name == 'pawn':
+                                lastMove = self.moves[-1]
+                                #if the last move was to this square
+                                if lastMove[1] == parseSquareName(tuple[0] + add, tuple[1]):
+                                    steps = abs(unParseSquareName(lastMove[0])[1] - unParseSquareName(lastMove[1])[1])
+                                    if steps == 2:
+                                        resultMap[parseSquareName(tuple[0] + add, tuple[1]+inverter)] = 2
+                                        resultMap[parseSquareName(tuple[0] + add, tuple[1])] = 4
         return resultMap
     #Retuns a map for a knight
     def mapKnight(self, square):
@@ -616,6 +617,7 @@ game = Game()
 
 game.printBoard()
 
+
 gameOn = True
 while gameOn:
     fromSquare = input('Move from: ')
@@ -624,5 +626,4 @@ while gameOn:
         gameOn = False
     else:
         print(game.move(fromSquare,toSquare))
-        game.printBoard() 
-
+        game.printBoard()
