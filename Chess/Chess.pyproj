@@ -23,9 +23,18 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Chess.py" />
+    <Compile Include="pyGameChess.py">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="Global|PythonCore|3.6-32" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Chess_Pieces_Sprite.png" />
+    <Content Include="dot.png" />
+    <Content Include="highlight.png" />
+    <Content Include="red_dot.png" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
   <!-- Uncomment the CoreCompile target to enable the Build command in
