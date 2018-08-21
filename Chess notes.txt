@@ -42,4 +42,4 @@ for tuple in mateGame:
     print(game.move(tuple[0],tuple[1]))
     game.printBoard()
 
-
+mousedown on legal piece

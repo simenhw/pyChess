@@ -496,7 +496,7 @@ class Game:
 
     #Executes the moves on the board. The the moves has to be prechecked for legality
     def execute_move(self, fromSquare, toSquare):
-        #execute move
+        #Execute move
         currentPieceMap = self.pieceMap[fromSquare]
         piece = self.board[fromSquare]
         capture = False
@@ -514,23 +514,23 @@ class Game:
                 capture = True
             #Check if the move is castling. If the king moves more than one column
             elif piece.name == 'king' and abs(spilt_squarename(fromSquare)[0] - spilt_squarename(toSquare)[0]) > 1:
-                #if queenside castling
+                #If queenside castling
                 if toSquare[0] == 'c':
                     self.board[toSquare] = self.board[fromSquare]
                     self.board[fromSquare] = 0
                     self.board['d' + fromSquare[1]] = self.board['a' + fromSquare[1]]
                     self.board['a' + fromSquare[1]] = 0
-                #has to be kingside castling
+                #Has to be kingside castling
                 else:
                     self.board[toSquare] = self.board[fromSquare]
                     self.board[fromSquare] = 0
                     self.board['f' + fromSquare[1]] = self.board['h' + fromSquare[1]]
                     self.board['h' + fromSquare[1]] = 0
-            #if not castling or En Passant, its a regular move
+            #If not castling or En Passant, its a regular move
             else:
                 self.board[toSquare] = self.board[fromSquare]
                 self.board[fromSquare] = 0
-        #if move is legal with capture
+        #If move is legal with capture
         elif currentPieceMap[toSquare] == 3:
             capturedPiece = self.board[toSquare]
             self.board[toSquare] = self.board[fromSquare]
