@@ -639,29 +639,67 @@ class pyGame:
                 if (x + y) % 2 != 1:
                     self.win.fill(WHITE, (x*100-100, y*100-100, 100 ,100))
 
-    def draw_pieces(self):
+    def draw_pieces(self, exceptPiece):
+        for square in game.board:
+            if game.board[square] != 0:
+                piece = game.board[square]
+                if exceptPiece != piece:
+                    xPos = (spilt_squarename(square)[0]-1)*100
+                    yPos = (8-spilt_squarename(square)[1])*100
+                    colorAdder = 0
+                    if piece.color == 'black':
+                        colorAdder = 100
+                    if piece.name == 'king':
+                        self.win.blit(piece_sprite, (xPos,yPos),((0,colorAdder),(100,100)))
+                    elif piece.name == 'queen':                                           
+                        self.win.blit(piece_sprite, (xPos,yPos),((100,colorAdder),(100,100)))
+                    elif piece.name == 'bishop':                                          
+                        self.win.blit(piece_sprite, (xPos,yPos),((200,colorAdder),(100,100)))
+                    elif piece.name == 'knight':                                          
+                        self.win.blit(piece_sprite, (xPos,yPos),((300,colorAdder),(100,100)))
+                    elif piece.name == 'rook':                                            
+                        self.win.blit(piece_sprite, (xPos,yPos),((400,colorAdder),(100,100)))
+                    elif piece.name == 'pawn':                                            
+                        self.win.blit(piece_sprite, (xPos,yPos),((500,colorAdder),(100,100)))
+
+    def drag_piece(self, dragPiece, pos):
         for square in game.board:
             if game.board[square] != 0:
                 piece = game.board[square]
                 xPos = (spilt_squarename(square)[0]-1)*100
                 yPos = (8-spilt_squarename(square)[1])*100
-                colorAdder = 0
-                if piece.color == 'black':
-                    colorAdder = 100
-                if piece.name == 'king':
-                    self.win.blit(piece_sprite, (xPos,yPos),((0,colorAdder),(100,100)))
-                elif piece.name == 'queen':                                           
-                    self.win.blit(piece_sprite, (xPos,yPos),((100,colorAdder),(100,100)))
-                elif piece.name == 'bishop':                                          
-                    self.win.blit(piece_sprite, (xPos,yPos),((200,colorAdder),(100,100)))
-                elif piece.name == 'knight':                                          
-                    self.win.blit(piece_sprite, (xPos,yPos),((300,colorAdder),(100,100)))
-                elif piece.name == 'rook':                                            
-                    self.win.blit(piece_sprite, (xPos,yPos),((400,colorAdder),(100,100)))
-                elif piece.name == 'pawn':                                            
-                    self.win.blit(piece_sprite, (xPos,yPos),((500,colorAdder),(100,100)))
+                if dragPiece == piece:
+                    xPos = pos[0]
+                    yPos = pos[1]
+                    colorAdder = 0
+                    if piece.color == 'black':
+                        colorAdder = 100
+                    if piece.name == 'king':
+                        self.win.blit(piece_sprite, (xPos,yPos),((0,colorAdder),(100,100)))
+                    elif piece.name == 'queen':                                           
+                        self.win.blit(piece_sprite, (xPos,yPos),((100,colorAdder),(100,100)))
+                    elif piece.name == 'bishop':                                          
+                        self.win.blit(piece_sprite, (xPos,yPos),((200,colorAdder),(100,100)))
+                    elif piece.name == 'knight':                                          
+                        self.win.blit(piece_sprite, (xPos,yPos),((300,colorAdder),(100,100)))
+                    elif piece.name == 'rook':                                            
+                        self.win.blit(piece_sprite, (xPos,yPos),((400,colorAdder),(100,100)))
+                    elif piece.name == 'pawn':                                            
+                        self.win.blit(piece_sprite, (xPos,yPos),((500,colorAdder),(100,100)))
+                    break
 
+import math
 
+def animate_drag_piece(fromPos, pos):
+    fromSquare = get_click_square(fromPos)
+    piecePos = (math.floor(fromPos[0]/100)*100,math.floor(fromPos[1]/100)*100)
+    print(piecePos)
+    toPos = (pos[0]-fromPos[0]+piecePos[0],pos[1]-fromPos[1]+piecePos[1])
+    piece = game.board[fromSquare]
+    print(piece)
+    gui.draw_board()
+    gui.draw_pieces(piece)
+    gui.drag_piece(piece, toPos)
 
 
 def get_click_square(pos):
@@ -679,7 +717,7 @@ clickToSquare = ''
 
 def show_possible_moves():
     gui.draw_board()
-    gui.draw_pieces()
+    gui.draw_pieces(False)
     print(game.pieceMap[clickFromSquare])
     res = spilt_squarename(clickFromSquare)
     gui.win.blit(hihghlight, ((res[0]-1)*100, (8-res[1])*100))
@@ -704,12 +742,12 @@ def reg_click():
                 gui.selectedPiece = ''
                 game.print_board()
                 gui.draw_board()
-                gui.draw_pieces()
+                gui.draw_pieces(False)
                 legalClickMove = True
         if not(legalClickMove):
             gui.selectedPiece = ''
             gui.draw_board()
-            gui.draw_pieces()
+            gui.draw_pieces(False)
 
     if not(legalClickMove):
         for square in game.board:
@@ -728,11 +766,11 @@ def reg_click():
                 print(game.move(clickFromSquare,clickToSquare))
                 game.print_board()
                 gui.draw_board()
-                gui.draw_pieces()
+                gui.draw_pieces(False)
         else:
             gui.selectedPiece = ''
             gui.draw_board()
-            gui.draw_pieces()
+            gui.draw_pieces(False)
 
 
 
@@ -742,21 +780,31 @@ game.print_board()
 
 gui = pyGame()
 gui.draw_board()
-gui.draw_pieces()
+gui.draw_pieces(False)
 run = True
 pressed = False
+dragActive = False
+
+#clock = pygame.time.Clock()
 
 #mainloop
 while run:
+    #clock.tick(10)
     for event in pygame.event.get():
-        if pygame.mouse.get_pressed() == (1,0,0) and not(pressed):
-            clickFromSquare = get_click_square(pygame.mouse.get_pos())
-            pressed = True
+        if pygame.mouse.get_pressed() == (1,0,0):
+            if dragActive == False:
+                dragFromPos = pygame.mouse.get_pos()
+                dragActive = True
+            animate_drag_piece(dragFromPos, pygame.mouse.get_pos())
+            pygame.display.flip()
+            if not(pressed):
+                clickFromSquare = get_click_square(pygame.mouse.get_pos())
+                pressed = True
         elif pygame.mouse.get_pressed() == (0,0,0) and pressed:
             clickToSquare = get_click_square(pygame.mouse.get_pos())
             reg_click()
             pressed = False
-
+            dragActive = False
         if event.type == pygame.QUIT:
             run = False
 

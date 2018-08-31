@@ -43,3 +43,28 @@ for tuple in mateGame:
     game.printBoard()
 
 mousedown on legal piece
+
+    def draw_pieces(self, exceptPiece):
+        for square in game.board:
+            if game.board[square] != 0:
+                piece = game.board[square]
+                xPos = (spilt_squarename(square)[0]-1)*100
+                yPos = (8-spilt_squarename(square)[1])*100
+                if exceptPiece == piece:
+                       xPos = exceptPos[0]
+                       yPos = exceptPos[1]
+                colorAdder = 0
+                if piece.color == 'black':
+                    colorAdder = 100
+                if piece.name == 'king':
+                    self.win.blit(piece_sprite, (xPos,yPos),((0,colorAdder),(100,100)))
+                elif piece.name == 'queen':                                           
+                    self.win.blit(piece_sprite, (xPos,yPos),((100,colorAdder),(100,100)))
+                elif piece.name == 'bishop':                                          
+                    self.win.blit(piece_sprite, (xPos,yPos),((200,colorAdder),(100,100)))
+                elif piece.name == 'knight':                                          
+                    self.win.blit(piece_sprite, (xPos,yPos),((300,colorAdder),(100,100)))
+                elif piece.name == 'rook':                                            
+                    self.win.blit(piece_sprite, (xPos,yPos),((400,colorAdder),(100,100)))
+                elif piece.name == 'pawn':                                            
+                    self.win.blit(piece_sprite, (xPos,yPos),((500,colorAdder),(100,100)))
