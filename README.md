@@ -5,14 +5,14 @@ The choice to create the game of chess was made on the level of complexity, and 
 
 List of progress:
 * Making the logic (playable with console/terminal) -DONE
-* Adding graphics - IN PROGRESS
-  -Needs a menu for start / restart etc.
-  -Needs a win/loose/draw screen/box
-  -Needs a graphical interface to promote pawns
-  -Could need a "flip screen" function
-* Expanding game - maybe TBD
-  -Adding a clock/timer
-  -Making game playable online
+* Adding graphics - IN PROGRESS<br>
+  -Needs a menu for start / restart etc.<br>
+  -Needs a win/loose/draw screen/box<br>
+  -Needs a graphical interface to promote pawns<br>
+  -Could need a "flip screen" function<br>
+* Expanding game - maybe TBD<br>
+  -Adding a clock/timer<br>
+  -Making game playable online<br>
 * PGN export - TBD
 * PGN import - TBD
 * Neural network! - Yeah... TBD
