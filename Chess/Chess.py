@@ -63,6 +63,7 @@ class Game:
         self.whitesTurn = True
         self.board = {}
         self.moves = []
+        self.pgn = ''
         self.pieceMap = {}
         for col in range(1,9):
             for row in range(1,9):
@@ -494,7 +495,7 @@ class Game:
         else:
             return "Stalemate"
 
-    #Executes the moves on the board. The the moves has to be prechecked for legality
+    #Executes the move on the board. The the move is, and has to be prechecked for legality
     def execute_move(self, fromSquare, toSquare):
         #Execute move
         currentPieceMap = self.pieceMap[fromSquare]
@@ -546,7 +547,7 @@ class Game:
     #Checks the move and executes if legal.
     #Promotes pawns
     #Returns human language strings
-    def move(self, fromSquare, toSquare):
+    def move(self, fromSquare, toSquare, promotePiece):
         #If there is not a piece in fromSquare
         if self.board[fromSquare] == 0:
             return 'No piece in that square to move'
@@ -576,21 +577,14 @@ class Game:
 
         #Promote pawn
         if piece.name == 'pawn' and (toSquare[1] == '1' or toSquare[1] == '8'):
-            promotionNotSelected = True
-            while promotionNotSelected:
-                promoteNum = input('Choose piece to promote pawn. \n 1: Queen \n 2: Rook \n 3: Knight \n 4: Bishop \n Enter number:')
-                if promoteNum == '1':
-                    self.board[toSquare] = Queen(piece.color)
-                    promotionNotSelected = False
-                elif promoteNum == '2':
-                    self.board[toSquare] = Rook(piece.color)
-                    promotionNotSelected = False
-                elif promoteNum == '3':
-                    self.board[toSquare] = Knight(piece.color)
-                    promotionNotSelected = False
-                elif promoteNum == '4':
-                    self.board[toSquare] = Bishop(piece.color)
-                    promotionNotSelected = False
+            if promotePiece == 'queen':
+                self.board[toSquare] = Queen(piece.color)
+            elif promotePiece == 'rook':
+                self.board[toSquare] = Rook(piece.color)
+            elif promotePiece == 'knight':
+                self.board[toSquare] = Knight(piece.color)
+            elif promotePiece == 'bishop':
+                self.board[toSquare] = Bishop(piece.color)
 
         if not(executeResult):
             capture = False
@@ -687,16 +681,24 @@ class pyGame:
                     elif piece.name == 'pawn':                                            
                         self.win.blit(piece_sprite, (xPos,yPos),((500,colorAdder),(100,100)))
                     break
+    def show_promotion_menu(self, color):
+        self.win.fill((216, 202, 175), (300, 300, 200 ,200))
+        pygame.draw.rect(self.win, (200, 171, 84), [295,295,210,210], 10)
+        colorAdder = 0
+        if color == 'black':
+            colorAdder = 100
+        self.win.blit(piece_sprite, (300,300),((100,colorAdder),(100,100)))
+        self.win.blit(piece_sprite, (400,300),((400,colorAdder),(100,100)))
+        self.win.blit(piece_sprite, (300,400),((200,colorAdder),(100,100)))
+        self.win.blit(piece_sprite, (400,400),((300,colorAdder),(100,100)))
 
 import math
 
 def animate_drag_piece(fromPos, pos):
     fromSquare = get_click_square(fromPos)
     piecePos = (math.floor(fromPos[0]/100)*100,math.floor(fromPos[1]/100)*100)
-    print(piecePos)
     toPos = (pos[0]-fromPos[0]+piecePos[0],pos[1]-fromPos[1]+piecePos[1])
     piece = game.board[fromSquare]
-    print(piece)
     gui.draw_board()
     gui.draw_pieces(piece)
     gui.drag_piece(piece, toPos)
@@ -734,11 +736,14 @@ def reg_click():
     print(clickToSquare)
     legalSelect = False
     legalClickMove = False
+    promotionPiece = False
 
     if gui.selectedPiece != '' and clickFromSquare == clickToSquare:
         for square, result in game.pieceMap[gui.selectedPiece].items():
             if square == clickToSquare and 2 <= result <= 3:
-                print(game.move(gui.selectedPiece,clickToSquare))
+                if game.board[gui.selectedPiece].name == 'pawn' and (clickToSquare[1] == '1' or clickToSquare[1] == '8'):
+                    promotionPiece = select_promotion(game.board[gui.selectedPiece].color)
+                print(game.move(gui.selectedPiece,clickToSquare, promotionPiece))
                 gui.selectedPiece = ''
                 game.print_board()
                 gui.draw_board()
@@ -760,10 +765,11 @@ def reg_click():
                 if gui.selectedPiece == '':
                     show_possible_moves()
                     gui.selectedPiece = clickToSquare
-
             else:
                 gui.selectedPiece = ''
-                print(game.move(clickFromSquare,clickToSquare))
+                if game.board[clickFromSquare].name == 'pawn' and (clickToSquare[1] == '1' or clickToSquare[1] == '8'):
+                    promotionPiece = select_promotion(game.board[clickFromSquare].color)
+                print(game.move(clickFromSquare,clickToSquare, promotionPiece))
                 game.print_board()
                 gui.draw_board()
                 gui.draw_pieces(False)
@@ -772,7 +778,29 @@ def reg_click():
             gui.draw_board()
             gui.draw_pieces(False)
 
-
+def select_promotion(color):
+    gui.show_promotion_menu(color)
+    pygame.display.flip()
+    promtionNotSelected = True
+    prom_pressed = False
+    while promtionNotSelected:
+        for event in pygame.event.get():
+            mousePos = pygame.mouse.get_pos()
+            if pygame.mouse.get_pressed() == (1,0,0):
+                prom_pressed = True
+            elif pygame.mouse.get_pressed() == (0,0,0) and prom_pressed == True and 300 <= mousePos[0] < 500 and 300 <= mousePos[1] < 500:
+                if 300 <= mousePos[0] < 400:
+                    if 300 <= mousePos[1] < 400:
+                        return "queen"
+                    elif 400 <= mousePos[1] < 500:
+                        return  "bishop"
+                if 400 <= mousePos[0] < 500:
+                    if 300 <= mousePos[1] < 400:
+                        return "rook"
+                    elif 400 <= mousePos[1] < 500:
+                        return "knight"
+            else:
+                prom_pressed = False
 
 game = Game()
 
@@ -807,6 +835,5 @@ while run:
             dragActive = False
         if event.type == pygame.QUIT:
             run = False
-
     pygame.display.flip()
 pygame.quit()
