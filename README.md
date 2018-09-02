@@ -8,7 +8,6 @@ List of progress:
 * Adding graphics - IN PROGRESS<br>
   -Needs a menu for start / restart etc.<br>
   -Needs a win/loose/draw screen/box<br>
-  -Needs a graphical interface to promote pawns<br>
   -Could need a "flip screen" function<br>
 * Expanding game - maybe TBD<br>
   -Adding a clock/timer<br>
