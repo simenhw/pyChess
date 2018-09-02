@@ -624,7 +624,7 @@ class pyGame:
         self.selectedPiece = ''
         self.winSize = (800, 800)
         self.win = pygame.display.set_mode(self.winSize)
-
+        self.flip = False
 
     def draw_board(self):
         self.win.fill(BLACK)
@@ -640,6 +640,9 @@ class pyGame:
                 if exceptPiece != piece:
                     xPos = (spilt_squarename(square)[0]-1)*100
                     yPos = (8-spilt_squarename(square)[1])*100
+                    if self.flip:
+                        xPos = (8-spilt_squarename(square)[0])*100
+                        yPos = (spilt_squarename(square)[1]-1)*100
                     colorAdder = 0
                     if piece.color == 'black':
                         colorAdder = 100
@@ -705,12 +708,16 @@ def animate_drag_piece(fromPos, pos):
 
 
 def get_click_square(pos):
+
     for n in range(0, 8):
         if n*100 <= pos[0] <= n*100+100:
             col = 1+n
         if n*100 <= pos[1] <= n*100+100:
             row = 8-n
     if col >= 0 and row >= 0:
+        if gui.flip:
+            col = 9-col
+            row = 9-row
         make_squarename(col, row)
         return make_squarename(col, row)
 
@@ -722,13 +729,22 @@ def show_possible_moves():
     gui.draw_pieces(False)
     print(game.pieceMap[clickFromSquare])
     res = spilt_squarename(clickFromSquare)
-    gui.win.blit(hihghlight, ((res[0]-1)*100, (8-res[1])*100))
+    if gui.flip:
+        gui.win.blit(hihghlight, ((8-res[0])*100, (res[1]-1)*100))
+    else:
+        gui.win.blit(hihghlight, ((res[0]-1)*100, (8-res[1])*100))
     for square, result in game.pieceMap[clickFromSquare].items():
         res = spilt_squarename(square)
         if result == 2:
-            gui.win.blit(dot, ((res[0]-1)*100, (8-res[1])*100))
+            if gui.flip:
+                gui.win.blit(dot, ((8-res[0])*100, (res[1]-1)*100))
+            else:
+                gui.win.blit(dot, ((res[0]-1)*100, (8-res[1])*100))
         elif result == 3:
-            gui.win.blit(redDot, ((res[0]-1)*100, (8-res[1])*100))
+            if gui.flip:
+                gui.win.blit(redDot, ((8-res[0])*100, (res[1]-1)*100))
+            else:
+                gui.win.blit(redDot, ((res[0]-1)*100, (8-res[1])*100))
     
 
 def reg_click():
@@ -803,7 +819,6 @@ def select_promotion(color):
                 prom_pressed = False
 
 game = Game()
-
 game.print_board()
 
 gui = pyGame()
@@ -812,13 +827,21 @@ gui.draw_pieces(False)
 run = True
 pressed = False
 dragActive = False
-
-#clock = pygame.time.Clock()
-
+gui.flip = True
+f_pressed = False
 #mainloop
 while run:
     #clock.tick(10)
     for event in pygame.event.get():
+        keys = pygame.key.get_pressed()
+        if keys[pygame.K_f] and not(f_pressed):
+            gui.flip = not(gui.flip)
+            f_pressed = True
+            gui.draw_board()
+            gui.draw_pieces(False)
+            pygame.display.flip()
+        if not(keys[pygame.K_f]):
+            f_pressed = False
         if pygame.mouse.get_pressed() == (1,0,0):
             if dragActive == False:
                 dragFromPos = pygame.mouse.get_pos()
